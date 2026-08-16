@@ -153,7 +153,10 @@ const state = {
   dayTime: 0.35,
   season: 0.25,
   moonPhase: 0,
-  showEarthOrbits: false
+  showEarthOrbits: false,
+  earthSpinCount: 0,
+  earthOrbitCount: 0,
+  moonOrbitCount: 0
 };
 
 const AXIAL_TILT = THREE.MathUtils.degToRad(23.44);
@@ -527,17 +530,17 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
 function bindUI() {
   const $ = (id) => document.getElementById(id);
 
-  // Логарифмическая скорость: 0 = реальное время, max = год за 60 секунд
+  // Логарифмическая скорость: 0 = реальное время (1x), max = год за 60 секунд (525960x)
   const SPEED_MAX = 525960; // 31557600 сек / 60 сек
 
   function mapSpeedSlider(v) {
-    if (v <= 0) return 0;
+    if (v <= 0) return 1;
     const t = v / 100;
     return Math.pow(10, t * Math.log10(SPEED_MAX));
   }
 
   function formatSpeed(s) {
-    if (s === 0) return 'Реальная';
+    if (s <= 1.5) return 'Реальная';
     const yearSeconds = 31557600;
     const secondsPerYear = yearSeconds / s;
     if (secondsPerYear >= 86400) return 'Год за ' + Math.round(secondsPerYear / 86400) + ' дн';
@@ -862,18 +865,33 @@ function animate() {
 
   if (!state.paused) {
     // Смена суток: полный цикл за ~60 секунд при speed=1
+    const prevDayTime = state.dayTime;
     state.dayTime = (state.dayTime + dt * (state.speed / 60)) % 1;
+    if (state.dayTime < prevDayTime) state.earthSpinCount++;
 
     // Сезон: полный год за ~120 секунд при speed=1
+    const prevSeason = state.season;
     state.season = (state.season + dt * (state.speed / 120)) % 1;
+    if (state.season < prevSeason) state.earthOrbitCount++;
     updateEarthOnOrbit();
 
     // Фаза Луны: полный цикл за ~90 секунд при speed=1
+    const prevMoonPhase = state.moonPhase;
     state.moonPhase = (state.moonPhase + dt * (state.speed / 90)) % 1;
+    if (state.moonPhase < prevMoonPhase) state.moonOrbitCount++;
     updateMoonPhase();
 
     // Вращение Луны вокруг своей оси (приливный захват)
     moonMesh.rotation.y += dt * 0.1 * state.speed;
+
+    // Дрейф облаков: базовая скорость = 1 оборот за сутки реального времени, умноженная на cloudSpeed
+    const baseDriftRate = (2 * Math.PI) / 86400;
+    state.cloudDrift += dt * baseDriftRate * state.speed * state.cloudSpeed;
+
+    // Счётчики оборотов в UI
+    document.getElementById('s-earth-spin').textContent = state.earthSpinCount;
+    document.getElementById('s-earth-orbit').textContent = state.earthOrbitCount;
+    document.getElementById('s-moon-orbit').textContent = state.moonOrbitCount;
 
     applyDayTime(state.dayTime);
   }
