@@ -861,9 +861,9 @@ function animate() {
   dt_global = dt;
 
   if (!state.paused) {
-    // speed=1 → 1 реальная секунда = 1 симулированная секунда
+    // speed=1 → реальное время: 1 оборот = 24 часа (86400 сек), год = 365.25 суток
     const SECONDS_PER_DAY = 86400;
-    const SECONDS_PER_YEAR = 31557600;
+    const SECONDS_PER_YEAR = 365.25 * SECONDS_PER_DAY; // 31557600 сек
 
     // Земля вокруг своей оси: 1 оборот за сутки
     state.dayTime = (state.dayTime + (dt * state.speed) / SECONDS_PER_DAY) % 1;
@@ -879,7 +879,7 @@ function animate() {
     // Вращение Луны вокруг своей оси (приливный захват): 1 оборот за орбиту
     moonMesh.rotation.y += (dt * state.speed) * 13.4 / SECONDS_PER_YEAR * 2 * Math.PI;
 
-    // Дрейф облаков: базовая скорость = 1 оборот за сутки реального времени
+    // Дрейф облаков: базовая скорость = 1 оборот за сутки
     state.cloudDrift += (dt * state.speed) / SECONDS_PER_DAY * 2 * Math.PI * state.cloudSpeed;
 
     applyDayTime(state.dayTime);
