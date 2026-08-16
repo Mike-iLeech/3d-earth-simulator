@@ -389,6 +389,15 @@ const moonOrbitGeom = new THREE.BufferGeometry().setFromPoints(moonOrbitPts.map(
 const moonOrbitLine = new THREE.Line(moonOrbitGeom, new THREE.LineBasicMaterial({ color: 0x8899aa, transparent: true, opacity: 0.25 }));
 earthOrbitGroup.add(moonOrbitLine);
 
+// --- Земная ось (красная линия через центр) ---
+const axisGeom = new THREE.BufferGeometry().setFromPoints([
+  new THREE.Vector3(0, -1.5, 0),
+  new THREE.Vector3(0, 1.5, 0)
+]);
+const axisLine = new THREE.Line(axisGeom, new THREE.LineBasicMaterial({ color: 0xff3333 }));
+axisLine.visible = false;
+earthTiltGroup.add(axisLine);
+
 // --- Около-Земные орбиты (НОО, СОО, ГОО, ВЭО) ---
 const EARTH_ORBIT_RADII = [1.042, 1.0657, 1.398, 1.012]; // в единицах EARTH_R
 const earthOrbitLines = [];
@@ -584,6 +593,11 @@ function bindUI() {
   $('t-earth-orbits').addEventListener('change', (e) => {
     state.showEarthOrbits = e.target.checked;
     updateEarthOrbitsVisibility();
+  });
+
+  // Земная ось
+  $('t-axis').addEventListener('change', (e) => {
+    axisLine.visible = e.target.checked;
   });
 
   // Синхронизация ползунков с автоматическим ходом времени (только UI, без триггера input)
