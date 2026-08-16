@@ -861,23 +861,26 @@ function animate() {
   dt_global = dt;
 
   if (!state.paused) {
-    // Сезон: полный год за ~120 секунд при speed=1 (базовая единица времени)
-    state.season = (state.season + dt * (state.speed / 120)) % 1;
+    // speed=1 → 1 реальная секунда = 1 симулированная секунда
+    const SECONDS_PER_DAY = 86400;
+    const SECONDS_PER_YEAR = 31557600;
+
+    // Земля вокруг своей оси: 1 оборот за сутки
+    state.dayTime = (state.dayTime + (dt * state.speed) / SECONDS_PER_DAY) % 1;
+
+    // Сезон: 1 оборот за год
+    state.season = (state.season + (dt * state.speed) / SECONDS_PER_YEAR) % 1;
     updateEarthOnOrbit();
 
-    // Земля вокруг своей оси: 365 оборотов за год
-    state.dayTime = (state.dayTime + dt * (state.speed / 120) * 365) % 1;
-
-    // Луна вокруг Земли: ~13 оборотов за год
-    state.moonPhase = (state.moonPhase + dt * (state.speed / 120) * 13.4) % 1;
+    // Луна вокруг Земли: ~13.4 оборота за год
+    state.moonPhase = (state.moonPhase + (dt * state.speed) * 13.4 / SECONDS_PER_YEAR) % 1;
     updateMoonPhase();
 
-    // Вращение Луны вокруг своей оси (приливный захват)
-    moonMesh.rotation.y += dt * 0.1 * state.speed;
+    // Вращение Луны вокруг своей оси (приливный захват): 1 оборот за орбиту
+    moonMesh.rotation.y += (dt * state.speed) * 13.4 / SECONDS_PER_YEAR * 2 * Math.PI;
 
-    // Дрейф облаков: базовая скорость = 1 оборот за сутки реального времени, умноженная на cloudSpeed
-    const baseDriftRate = (2 * Math.PI) / 86400;
-    state.cloudDrift += dt * baseDriftRate * state.speed * state.cloudSpeed;
+    // Дрейф облаков: базовая скорость = 1 оборот за сутки реального времени
+    state.cloudDrift += (dt * state.speed) / SECONDS_PER_DAY * 2 * Math.PI * state.cloudSpeed;
 
     applyDayTime(state.dayTime);
   }
