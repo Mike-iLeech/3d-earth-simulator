@@ -153,10 +153,7 @@ const state = {
   dayTime: 0.35,
   season: 0.25,
   moonPhase: 0,
-  showEarthOrbits: false,
-  earthSpinCount: 0,
-  earthOrbitCount: 0,
-  moonOrbitCount: 0
+  showEarthOrbits: false
 };
 
 const AXIAL_TILT = THREE.MathUtils.degToRad(23.44);
@@ -864,21 +861,15 @@ function animate() {
   dt_global = dt;
 
   if (!state.paused) {
-    // Смена суток: полный цикл за ~60 секунд при speed=1
-    const prevDayTime = state.dayTime;
-    state.dayTime = (state.dayTime + dt * (state.speed / 60)) % 1;
-    if (state.dayTime < prevDayTime) state.earthSpinCount++;
-
-    // Сезон: полный год за ~120 секунд при speed=1
-    const prevSeason = state.season;
+    // Сезон: полный год за ~120 секунд при speed=1 (базовая единица времени)
     state.season = (state.season + dt * (state.speed / 120)) % 1;
-    if (state.season < prevSeason) state.earthOrbitCount++;
     updateEarthOnOrbit();
 
-    // Фаза Луны: полный цикл за ~90 секунд при speed=1
-    const prevMoonPhase = state.moonPhase;
-    state.moonPhase = (state.moonPhase + dt * (state.speed / 90)) % 1;
-    if (state.moonPhase < prevMoonPhase) state.moonOrbitCount++;
+    // Земля вокруг своей оси: 365 оборотов за год
+    state.dayTime = (state.dayTime + dt * (state.speed / 120) * 365) % 1;
+
+    // Луна вокруг Земли: ~13 оборотов за год
+    state.moonPhase = (state.moonPhase + dt * (state.speed / 120) * 13.4) % 1;
     updateMoonPhase();
 
     // Вращение Луны вокруг своей оси (приливный захват)
@@ -887,11 +878,6 @@ function animate() {
     // Дрейф облаков: базовая скорость = 1 оборот за сутки реального времени, умноженная на cloudSpeed
     const baseDriftRate = (2 * Math.PI) / 86400;
     state.cloudDrift += dt * baseDriftRate * state.speed * state.cloudSpeed;
-
-    // Счётчики оборотов в UI
-    document.getElementById('s-earth-spin').textContent = state.earthSpinCount;
-    document.getElementById('s-earth-orbit').textContent = state.earthOrbitCount;
-    document.getElementById('s-moon-orbit').textContent = state.moonOrbitCount;
 
     applyDayTime(state.dayTime);
   }
