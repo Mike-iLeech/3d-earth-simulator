@@ -618,8 +618,14 @@ function bindUI() {
   });
 
   $('cloud-speed').addEventListener('input', (e) => {
-    state.cloudSpeed = parseFloat(e.target.value);
-    $('cs-val').textContent = state.cloudSpeed.toFixed(1) + 'x';
+    const v = parseInt(e.target.value, 10);
+    if (v <= 0) {
+      state.cloudSpeed = 0;
+    } else {
+      const t = v / 100;
+      state.cloudSpeed = Math.pow(10, t * Math.log10(5000));
+    }
+    $('cs-val').textContent = (state.cloudSpeed >= 1 ? Math.round(state.cloudSpeed) : state.cloudSpeed.toFixed(1)) + 'x';
   });
 
   $('t-atmosphere').addEventListener('change', (e) => {
