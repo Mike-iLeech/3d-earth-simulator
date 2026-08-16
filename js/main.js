@@ -435,6 +435,15 @@ function applyDayTime(t) {
   document.getElementById('s-time').textContent =
     String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0');
 
+  // Календарная дата: season=0 → 1 января текущего года
+  const year = new Date().getFullYear();
+  const dayOfYear = Math.floor(state.season * 365.25);
+  const dateObj = new Date(year, 0, 1 + dayOfYear);
+  document.getElementById('s-date').textContent =
+    String(dateObj.getDate()).padStart(2, '0') + '.' +
+    String(dateObj.getMonth() + 1).padStart(2, '0') + '.' +
+    dateObj.getFullYear();
+
   let phase;
   if (hour < 5 || hour >= 21)      phase = 'Ночь';
   else if (hour < 8)               phase = 'Рассвет';
