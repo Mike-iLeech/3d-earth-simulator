@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Планета Земля — Визуальный симулятор</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app"></div>
+
+  <div class="ui">
+    <header class="panel panel--top">
+      <h1>Планета Земля</h1>
+      <p class="subtitle">Микроскопический визуальный симулятор</p>
+      <div class="stats" id="stats">
+        <span class="stat"><b id="s-time">--:--</b></span>
+        <span class="stat"><b id="s-temp">--°C</b></span>
+        <span class="stat"><b id="s-phase">—</b></span>
+      </div>
+    </header>
+
+    <aside class="panel panel--controls">
+      <div class="control-group">
+        <label for="speed">Скорость вращения</label>
+        <input id="speed" type="range" min="0" max="5" step="0.1" value="1" />
+      </div>
+
+      <div class="control-group">
+        <label for="temp">Температура: <span id="temp-val">+15°C</span></label>
+        <input id="temp" type="range" min="-40" max="60" step="1" value="15" />
+      </div>
+
+      <div class="control-group">
+        <label for="timeOfDay">Время суток: <span id="tod-val">08:24</span></label>
+        <input id="timeOfDay" type="range" min="0" max="1" step="0.001" value="0.35" />
+      </div>
+
+      <div class="control-group">
+        <label for="season">Год: <span id="season-val">Июн</span></label>
+        <input id="season" type="range" min="0" max="1" step="0.001" value="0.25" />
+      </div>
+
+      <div class="control-group">
+        <label for="moonPhase">Фаза Луны: <span id="moon-phase-val">Новолуние</span></label>
+        <input id="moonPhase" type="range" min="0" max="1" step="0.001" value="0" />
+      </div>
+
+      <div class="control-group">
+        <label for="cloud-intensity">Облака — интенсивность: <span id="ci-val">70%</span></label>
+        <input id="cloud-intensity" type="range" min="0" max="100" step="1" value="70" />
+      </div>
+
+      <div class="control-group">
+        <label for="cloud-speed">Облака — скорость: <span id="cs-val">1.0x</span></label>
+        <input id="cloud-speed" type="range" min="0" max="5" step="0.1" value="1" />
+      </div>
+
+      <div class="control-group toggles">
+        <label><input type="checkbox" id="t-clouds" checked /> Облака</label>
+        <label><input type="checkbox" id="t-atmosphere" checked /> Атмосфера</label>
+        <label><input type="checkbox" id="t-cities" checked /> Огни городов</label>
+        <label><input type="checkbox" id="t-earth-orbits" /> Около-Земные орбиты</label>
+      </div>
+
+      <div class="control-group buttons">
+        <button data-view="earthOrbits">Земные орбиты</button>
+        <button data-view="earth">Земля</button>
+        <button data-view="moon">Луна</button>
+        <button data-view="sun">Солнце</button>
+      </div>
+
+      <button id="pause" class="btn-pause">Пауза</button>
+    </aside>
+
+    <footer class="panel panel--hint">
+      ЛКМ — вращение · Колесо — зум · ПКМ — панорама
+    </footer>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
