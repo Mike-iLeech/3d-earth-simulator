@@ -496,7 +496,30 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
 function bindUI() {
   const $ = (id) => document.getElementById(id);
 
-  $('speed').addEventListener('input', (e) => state.speed = parseFloat(e.target.value));
+  // Логарифмическая скорость: 0 = реальное время, max = год за 60 секунд
+  const SPEED_MAX = 525960; // 31557600 сек / 60 сек
+
+  function mapSpeedSlider(v) {
+    if (v <= 0) return 0;
+    const t = v / 100;
+    return Math.pow(10, t * Math.log10(SPEED_MAX));
+  }
+
+  function formatSpeed(s) {
+    if (s === 0) return 'Реальная';
+    const yearSeconds = 31557600;
+    const secondsPerYear = yearSeconds / s;
+    if (secondsPerYear >= 86400) return 'Год за ' + Math.round(secondsPerYear / 86400) + ' дн';
+    if (secondsPerYear >= 3600) return 'Год за ' + Math.round(secondsPerYear / 3600) + ' ч';
+    if (secondsPerYear >= 60)   return 'Год за ' + Math.round(secondsPerYear / 60) + ' мин';
+    return 'Год за ' + Math.max(1, Math.round(secondsPerYear)) + ' сек';
+  }
+
+  $('speed').addEventListener('input', (e) => {
+    const v = parseInt(e.target.value, 10);
+    state.speed = mapSpeedSlider(v);
+    $('speed-val').textContent = formatSpeed(state.speed);
+  });
 
   $('temp').addEventListener('input', (e) => {
     state.temperature = parseInt(e.target.value, 10);
