@@ -215,12 +215,22 @@ const orbitLine = new THREE.Line(orbitGeom, new THREE.LineBasicMaterial({ color:
 scene.add(orbitLine);
 
 // --- Земля (орбитальная группа с наклоном оси) ---
+// Физический смысл наклона: ось вращения Земли отклонена от перпендикуляра к
+// плоскости орбиты на 23.44°. Это направление ФИКСИРОВАНО в мировом
+// пространстве (северный полюс всегда смотрит на Полярную звезду) и
+// не меняется с течением сезона — меняется только ПЛОСКОСТЬ орбиты, т.е.
+// положение Земли на орбите относительно оси, что и вызывает смену сезонов.
 const earthOrbitGroup = new THREE.Group();
-earthOrbitGroup.position.set(ORBIT_R, 0, 0);
+// Перигелий (декабрь) → Земля ближе к Солнцу: −Z в нашем сцене.
+// Начальное состояние (season=0) = январь ≈ перигелий, см. updateEarthOnOrbit.
+earthOrbitGroup.position.set(0, 0, -ORBIT_R);
 scene.add(earthOrbitGroup);
 
 const earthTiltGroup = new THREE.Group();
-earthTiltGroup.rotation.z = AXIAL_TILT;
+// −23.44° вокруг Z: ось Y (северный полюс) уходит от +Y к −X, остаётся в одной
+// позиции весь год. updateEarthOnOrbit() перезадаёт это же значение при каждом
+// кадре (защита от изменения из других мест кода).
+earthTiltGroup.rotation.z = -AXIAL_TILT;
 earthOrbitGroup.add(earthTiltGroup);
 
 // Реальные текстуры Земли (NASA Blue Marble + Black Marble) — скачаны локально
@@ -487,9 +497,21 @@ function applyDayTime(t) {
 }
 
 // --- Позиция Земли на орбите ---
+// Наклон оси Земли фиксирован в пространстве: северный полюс смотрит на
+// Полярную звезду (в нашем сцене это +Z), и сохраняет направление весь год.
+// Позиция Земли на орбите задаёт сезоны:
+//  - июнь-июль: Земля в +Z (от Солнца), северное полушарие наклонено от Солнца → зима
+//  - декабрь-январь: Земля в −Z (ближе к Солнцу, перигелий), северное полушарие наклонено к Солнцу → лето
 function updateEarthOnOrbit() {
   const angle = state.season * Math.PI * 2;
-  earthOrbitGroup.position.set(Math.cos(angle) * ORBIT_R, 0, -Math.sin(angle) * ORBIT_R);
+  earthOrbitGroup.position.set(
+    Math.cos(angle) * ORBIT_R, 0,
+    Math.sin(angle) * ORBIT_R  // flipped: July (+0.5) → −Z, January (0/1) → +Z
+  );
+  // Визуальный наклон: −23.44° вокруг оси Z (северный полюс уводится от +Y к −X)
+  // Ось вращения остаётся в одной фиксированной позиции в мировых координатах
+  // в течение всего года — именно так Земля "смотрит на Полярную звезду".
+  earthTiltGroup.rotation.z = -AXIAL_TILT;
 }
 
 // --- Фаза Луны: 0=новолуние, 0.5=полнолуние ---
@@ -846,7 +868,42 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// --- Инициализация ---
+// --- Инициализация: текущая реальная дата/время ---
+function seedFromLocalTime() {
+  const now = new Date();
+  const dayFraction = (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
+
+  // Дневное время: fraction-of-day → state.dayTime
+  state.dayTime = dayFraction % 1;
+
+  // Сезон: day-of-year / 365.25 (Jan 1 → 0)
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const startOfYearMs = startOfYear.getTime();
+  const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+  const spanMs = endOfYear.getTime() - startOfYearMs;
+  let frac = (now.getTime() - startOfYearMs) / spanMs;
+  frac = frac % 1;
+  if (frac < 0) frac += 1;
+  state.season = frac;
+}
+console.log('[SEED] local now =', new Date().toLocaleString(),
+            ' → state.dayTime (0–1) will be seeded next frame');
+seedFromLocalTime();
+
+// Синхронизируем ползунки с начальные значения
+const _tod = document.getElementById('timeOfDay');
+const _season = document.getElementById('season');
+if (_tod)  _tod.value  = state.dayTime.toFixed(3);
+if (_season) _season.value = state.season.toFixed(3);
+// Обновляем метки и визуальные эффекты
+if (_season) {
+  // Trigger input handler to apply labels/orbit/temp
+  const monthNames = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+  const idx = Math.floor(state.season * 12);
+  const el = document.getElementById('season-val');
+  if (el) el.textContent = monthNames[idx];
+}
+
 applyTemperature(state.temperature);
 updateEarthOnOrbit();
 applyDayTime(state.dayTime);
