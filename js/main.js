@@ -420,6 +420,21 @@ function applyTemperature(t) {
   earthUniforms.snowAmount.value = snowAmount;
 }
 
+// --- Сезонная температура (средняя глобальная, °C) ---
+// season: 0=Янв, 0.25=Апр, 0.5=Июл, 0.75=Окт
+const MONTHLY_TEMPS = [4.0, 5.5, 8.5, 13.0, 17.5, 21.0, 23.5, 23.0, 19.5, 14.5, 9.0, 5.0];
+
+function getSeasonalTemperature(season) {
+  const s = ((season % 1) + 1) % 1;
+  const monthFloat = s * 12;
+  const m0 = Math.floor(monthFloat) % 12;
+  const m1 = (m0 + 1) % 12;
+  const frac = monthFloat - Math.floor(monthFloat);
+  // Плавная интерполяция (smoothstep) между месяцами
+  const smooth = frac * frac * (3 - 2 * frac);
+  return MONTHLY_TEMPS[m0] * (1 - smooth) + MONTHLY_TEMPS[m1] * smooth;
+}
+
 // --- Вращение Земли вокруг оси: привязано к времени суток ---
 function updateEarthRotation(t) {
   earthMesh.rotation.y = t * Math.PI * 2;
@@ -460,16 +475,14 @@ function applyDayTime(t) {
   else                             phase = 'Закат';
   document.getElementById('s-phase').textContent = phase;
 
-  // Температура: суточный ход + сезонный сдвиг (только для отображения)
-  const baseTemp = state.temperature;
-  const seasonAngle = state.season * Math.PI * 2;
+  // Температура: сезонная база + суточный ход (только для отображения)
+  const baseTemp = getSeasonalTemperature(state.season);
   const diurnal  = Math.sin((t - 0.2) * Math.PI * 2) * 6;
-  const seasonal = Math.cos(seasonAngle) * 15;
-  const current  = baseTemp + diurnal + seasonal;
+  const current  = baseTemp + diurnal;
   document.getElementById('s-temp').textContent =
     (current >= 0 ? '+' : '') + current.toFixed(1) + '°C';
 
-  // Снег зависит ТОЛЬКО от пользовательской температуры
+  // Снег зависит от сезонной температуры
   applyTemperature(baseTemp);
 }
 
@@ -539,11 +552,11 @@ function bindUI() {
     $('speed-val').textContent = formatSpeed(state.speed);
   });
 
-  $('temp').addEventListener('input', (e) => {
-    state.temperature = parseInt(e.target.value, 10);
-    $('temp-val').textContent = (state.temperature >= 0 ? '+' : '') + state.temperature + '°C';
-    applyDayTime(state.dayTime);
-  });
+  // Температура — автоматическая (сезонная), слайдер только для отображения
+  function updateTempDisplay() {
+    const baseTemp = getSeasonalTemperature(state.season);
+    $('temp-val').textContent = (baseTemp >= 0 ? '+' : '') + Math.round(baseTemp) + '°C';
+  }
 
   // Время суток → вращение Земли вокруг оси
   const todSlider = $('timeOfDay');
@@ -564,6 +577,7 @@ function bindUI() {
   $('season').addEventListener('input', (e) => {
     state.season = parseFloat(e.target.value);
     updateSeasonLabel();
+    updateTempDisplay();
     updateEarthOnOrbit();
     applyDayTime(state.dayTime);
   });
@@ -620,6 +634,7 @@ function bindUI() {
     if (!userDraggingSeason && !state.paused) {
       seasonSlider.value = state.season.toFixed(3);
       updateSeasonLabel();
+      updateTempDisplay();
     }
 
     if (!userDraggingMoon && !state.paused) {
